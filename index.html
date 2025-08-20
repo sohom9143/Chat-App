@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AddaGhor - The Complete Chat Platform</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        :root {
+            --primary-color: #5E5DF0; --secondary-color: #4A4AFF; --bg-color: #F7F8FC; --card-bg: #FFFFFF;
+            --text-color: #1A1A1A; --light-text: #8A94A6; --border-color: #E8EAF0; --success-color: #34D399;
+            --error-color: #F87171; --online-color: #34D399; --font-family: 'Inter', sans-serif;
+            --shadow: 0 8px 24px rgba(94, 93, 240, 0.1); --message-sent-bg: #5E5DF0; --message-received-bg: #E9EAF0;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { height: 100%; }
+        body { font-family: var(--font-family); margin: 0; background-color: var(--bg-color); display: flex; justify-content: center; align-items: center; color: var(--text-color); }
+        .container { width: 100%; height: 100%; max-width: 420px; background: var(--card-bg); box-shadow: 0 16px 40px rgba(0,0,0,0.1); border-radius: 24px; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; visibility: hidden; transition: opacity 0.4s ease; display: flex; flex-direction: column; }
+        .screen.active { opacity: 1; visibility: visible; }
+        #loading-screen { justify-content: center; align-items: center; }
+        .loader { width: 50px; height: 50px; border: 4px solid var(--border-color); border-top-color: var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        #auth-screen { justify-content: center; padding: 25px; background: var(--bg-color); }
+        .auth-container { width: 100%; text-align: center; animation: fadeInUp 0.5s; }
+        .auth-container h2 { font-size: 28px; font-weight: 700; margin-bottom: 30px; }
+        .auth-form { display: none; } .auth-form.active { display: block; }
+        .input-group { margin-bottom: 16px; }
+        .input-group input { width: 100%; padding: 14px 16px; background-color: #F7F7F7; border: 1px solid var(--border-color); border-radius: 12px; font-size: 16px; }
+        .auth-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; color: white; background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); }
+        .auth-btn.magic { background: none; border: 1px solid var(--primary-color); color: var(--primary-color); margin-top: 10px; }
+        .form-toggle-link { margin-top: 25px; cursor: pointer; color: var(--primary-color); font-weight: 500; }
+        
+        #app-screen { transform: none; height: 100%; }
+        .app-main-view { display: flex; flex-grow: 1; overflow: hidden; position: relative; }
+        .sidebar, .chat-view { position: absolute; top: 0; height: 100%; width: 100%; transition: transform 0.3s ease-in-out; display: flex; flex-direction: column; }
+        .sidebar { left: 0; }
+        .chat-view { left: 100%; }
+        .app-main-view.chat-active .sidebar { transform: translateX(-100%); }
+        .app-main-view.chat-active .chat-view { transform: translateX(-100%); }
+        
+        .sidebar-header, .chat-header { padding: 16px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .sidebar-header .back-btn, .chat-header .back-btn { background: none; border: none; cursor: pointer; padding: 0; display: none; }
+        .sidebar-nav { display: flex; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
+        .sidebar-nav button { flex: 1; background: none; border: none; padding: 12px; cursor: pointer; font-weight: 500; }
+        .sidebar-nav button.active { color: var(--primary-color); border-bottom: 2px solid var(--primary-color); }
+        .sidebar-list { flex-grow: 1; overflow-y: auto; }
+        .sidebar-list-content.hidden { display: none; }
+        
+        .user-card, .channel-item { display: flex; align-items: center; padding: 12px 16px; cursor: pointer; border-bottom: 1px solid var(--border-color); }
+        .user-card:hover, .channel-item:hover { background-color: var(--bg-color); }
+        .user-card img { width: 45px; height: 45px; border-radius: 50%; margin-right: 12px; }
+        .channel-item::before { content: '#'; color: var(--light-text); font-weight: 700; margin-right: 10px; }
+        
+        .chat-messages { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column-reverse; }
+        .message-bubble { max-width: 75%; padding: 10px 15px; border-radius: 18px; margin-bottom: 10px; }
+        .message-bubble.sent { background-color: var(--message-sent-bg); color: white; align-self: flex-end; }
+        .message-bubble.received { background-color: var(--message-received-bg); color: var(--text-color); align-self: flex-start; }
+        
+        .chat-input { padding: 10px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; }
+        /* Paste all other required CSS for FAB, Modals, Toast, etc. from previous version here */
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="loading-screen" class="screen active"><div class="loader"></div></div>
+    <div id="auth-screen" class="screen">
+        <div class="auth-container">
+            <div id="login-form" class="auth-form active">
+                <h2>Welcome Back!</h2>
+                <div class="input-group"><input type="email" id="login-email" placeholder="Email" required></div>
+                <div class="input-group"><input type="password" id="login-password" placeholder="Password"></div>
+                <button id="login-btn" class="auth-btn">Log In</button>
+                <button id="magic-login-btn" class="auth-btn magic">Continue with Magic Link</button>
+                <p class="form-toggle-link" onclick="window.toggleAuthForms()">Create a new account</p>
+            </div>
+            <div id="signup-form" class="auth-form">
+                <h2>Join AddaGhor</h2>
+                <div class="input-group"><input type="email" id="signup-email" placeholder="Enter your email" required></div>
+                <button id="magic-signup-btn" class="auth-btn">Sign Up with Magic Link</button>
+                <p class="form-toggle-link" onclick="window.toggleAuthForms()">Already have an account?</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-screen" class="screen">
+        <div class="app-main-view" id="app-main-view">
+            <div class="sidebar">
+                <div class="sidebar-header" id="sidebar-header">
+                    <button class="back-btn" id="back-to-main-sidebar-btn">&lt;</button>
+                    <h2 id="sidebar-title">Chats</h2>
+                </div>
+                <div class="sidebar-nav" id="main-sidebar-nav">
+                    <button id="nav-dms" class="active" data-list="dms-list">Direct</button>
+                    <button id="nav-groups" data-list="groups-list">Groups</button>
+                </div>
+                <div class="sidebar-list">
+                    <div id="dms-list" class="sidebar-list-content"></div>
+                    <div id="groups-list" class="sidebar-list-content hidden"></div>
+                    <div id="channels-list" class="sidebar-list-content hidden"></div>
+                </div>
+            </div>
+            <div class="chat-view" id="chat-view">
+                <div class="chat-header" id="chat-header"></div>
+                <div class="chat-messages" id="chat-messages"></div>
+                <div class="chat-input" id="chat-input-form">
+                    <input type="text" id="message-input" placeholder="Type a message...">
+                    <button id="send-message-btn">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="profile-setup-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Complete Your Profile</h3>
+            <div class="input-group"><input type="text" id="setup-fullname" placeholder="Full Name"></div>
+            <div class="input-group"><input type="text" id="setup-username" placeholder="Username"></div>
+            <button id="complete-profile-btn" class="auth-btn">Save & Continue</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- CONFIGURATION ---
+    const SUPABASE_URL = 'https://jggptuitbcwuuvymeyjl.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpnZ3B0dWl0YmN3dXV2eW1leWpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1OTUyODEsImV4cCI6MjA3MTE3MTI4MX0.WzJARPFbTGP2Xzc7QesXIYr0jqJ1qHebn49VLk833WA';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // --- STATE ---
+    let currentUser = null;
+    let currentChat = { type: null, id: null };
+    let chatSubscription = null;
+    const dom = {
+        screens: { loading: document.getElementById('loading-screen'), auth: document.getElementById('auth-screen'), app: document.getElementById('app-screen') },
+        authForms: { login: document.getElementById('login-form'), signup: document.getElementById('signup-form') },
+        modals: { profileSetup: document.getElementById('profile-setup-modal') },
+        app: { mainView: document.getElementById('app-main-view'), chatView: document.getElementById('chat-view'), sidebar: {
+            title: document.getElementById('sidebar-title'), nav: document.getElementById('main-sidebar-nav'),
+            backBtn: document.getElementById('back-to-main-sidebar-btn'), lists: { dms: document.getElementById('dms-list'),
+            groups: document.getElementById('groups-list'), channels: document.getElementById('channels-list') }
+        }, chat: {
+            header: document.getElementById('chat-header'), messages: document.getElementById('chat-messages'),
+            input: document.getElementById('message-input'), sendBtn: document.getElementById('send-message-btn')
+        }}
+    };
+
+    // --- UI FUNCTIONS ---
+    const showScreen = (name) => { Object.values(dom.screens).forEach(s => s.classList.remove('active')); dom.screens[name].classList.add('active'); };
+    window.toggleAuthForms = () => { dom.authForms.login.classList.toggle('active'); dom.authForms.signup.classList.toggle('active'); };
+    const showModal = (name) => dom.modals[name].classList.add('active');
+    const hideModal = (name) => dom.modals[name].classList.remove('active');
+    // Add a showToast function here
+
+    // --- AUTHENTICATION ---
+    const handleLogin = async () => { /* ... from previous version ... */ };
+    const handleMagicLink = async (email, redirect = window.location.href) => {
+        const { error } = await _supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirect } });
+        if (error) return console.error(error.message); // showToast
+        console.log('Magic link sent!'); // showToast
+    };
+    const handleProfileSetup = async () => {
+        const { data: { user } } = await _supabase.auth.getUser();
+        const fullName = document.getElementById('setup-fullname').value;
+        const username = document.getElementById('setup-username').value;
+        // ... (validation and update logic from previous version)
+        await _supabase.from('profiles').update({ full_name: fullName, username, is_profile_complete: true }).eq('id', user.id);
+        hideModal('profileSetup');
+        await initApp(user);
+    };
+
+    // --- APP LOGIC ---
+    const switchSidebarView = (view, context = {}) => {
+        const { title, nav, backBtn, lists } = dom.app.sidebar;
+        Object.values(lists).forEach(l => l.classList.add('hidden'));
+        if (view === 'main') {
+            title.textContent = 'Chats';
+            nav.style.display = 'flex';
+            backBtn.style.display = 'none';
+            const activeList = nav.querySelector('button.active').dataset.list;
+            lists[activeList.split('-')[0]].classList.remove('hidden');
+        } else if (view === 'channels') {
+            title.textContent = context.groupName;
+            nav.style.display = 'none';
+            backBtn.style.display = 'block';
+            lists.channels.classList.remove('hidden');
+        }
+    };
+    const loadSidebarLists = async () => { /* Fetch and render DMs and Groups here */ };
+    const loadChannels = async (groupId, groupName) => {
+        const { data } = await _supabase.from('channels').select('*').eq('group_id', groupId);
+        dom.app.sidebar.lists.channels.innerHTML = data.map(c => `<div class="channel-item" data-id="${c.id}" data-name="${c.name}">${c.name}</div>`).join('');
+        switchSidebarView('channels', { groupName });
+    };
+    const openChat = async (target) => {
+        currentChat = target; // target = { type: 'dm'/'group', id: '...', name: '...', avatar: '...' }
+        dom.app.mainView.classList.add('chat-active');
+        dom.app.chat.header.innerHTML = `<button class="back-btn" id="back-btn-chat">&lt;</button><img src="${target.avatar}"><p>${target.name}</p>`;
+        await loadMessages();
+        subscribeToMessages();
+    };
+    const closeChat = () => { dom.app.mainView.classList.remove('chat-active'); if (chatSubscription) chatSubscription.unsubscribe(); };
+    const loadMessages = async () => { /* Based on currentChat.type and id, fetch and render messages */ };
+    const sendMessage = async () => { /* Based on currentChat.type and id, insert a new message */ };
+    const subscribeToMessages = () => { /* Subscribe to new messages for the currentChat */ };
+
+    // --- INITIALIZATION ---
+    const initApp = async (user) => {
+        const { data } = await _supabase.from('profiles').select('*').eq('id', user.id).single();
+        currentUser = data;
+        await loadSidebarLists();
+        switchSidebarView('main');
+        showScreen('app');
+    };
+    const initEventListeners = () => {
+        // Auth buttons
+        document.getElementById('login-btn').addEventListener('click', handleLogin);
+        document.getElementById('magic-login-btn').addEventListener('click', () => handleMagicLink(document.getElementById('login-email').value));
+        document.getElementById('magic-signup-btn').addEventListener('click', () => handleMagicLink(document.getElementById('signup-email').value));
+        document.getElementById('complete-profile-btn').addEventListener('click', handleProfileSetup);
+        // Sidebar nav
+        dom.app.sidebar.nav.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') switchSidebarView('main'); });
+        dom.app.sidebar.backBtn.addEventListener('click', () => switchSidebarView('main'));
+        // Dynamic listeners for lists need to be added inside render functions (event delegation)
+        dom.app.sidebar.lists.groups.addEventListener('click', (e) => {
+            const groupEl = e.target.closest('.user-card');
+            if (groupEl) loadChannels(groupEl.dataset.id, groupEl.dataset.name);
+        });
+        dom.app.sidebar.lists.channels.addEventListener('click', (e) => { /* Open Channel Chat */ });
+        dom.app.sidebar.lists.dms.addEventListener('click', (e) => { /* Open DM Chat */ });
+        // Chat
+        dom.app.chat.sendBtn.addEventListener('click', sendMessage);
+        dom.app.chat.header.addEventListener('click', (e) => { if (e.target.id === 'back-btn-chat') closeChat(); });
+    };
+
+    _supabase.auth.onAuthStateChange(async (_, session) => {
+        if (session) {
+            const { data: profile } = await _supabase.from('profiles').select('is_profile_complete').eq('id', session.user.id).single();
+            if (profile && !profile.is_profile_complete) {
+                showModal('profileSetup');
+            } else if (profile) {
+                await initApp(session.user);
+            }
+        } else {
+            showScreen('auth');
+        }
+    });
+
+    initEventListeners();
+});
+</script>
+</body>
+</html>
