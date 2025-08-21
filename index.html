@@ -6,44 +6,26 @@
     <title>AddaGhor</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* A simple, clean, and responsive design system */
         :root {
-            --primary-color: #3b82f6;
-            --secondary-color: #6b7280;
-            --bg-color: #f9fafb;
-            --surface-color: #ffffff;
-            --text-color: #111827;
-            --border-color: #e5e7eb;
-            --success-color: #22c55e;
-            --error-color: #ef4444;
+            --primary-color: #3b82f6; --secondary-color: #6b7280; --bg-color: #f9fafb;
+            --surface-color: #ffffff; --text-color: #111827; --border-color: #e5e7eb;
+            --success-color: #22c55e; --error-color: #ef4444;
         }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            overflow: hidden; /* Prevent scrolling on the body */
-        }
-        #app {
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 0.5rem; cursor: pointer; font-weight: 600; }
+        html, body { height: 100%; margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        #app { height: 100vh; display: flex; flex-direction: column; background-color: var(--bg-color); color: var(--text-color); overflow: hidden; }
+        .container { max-width: 400px; margin: auto; padding: 2rem; }
+        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 0.5rem; cursor: pointer; font-weight: 600; font-size: 1rem; }
         .btn-primary { background-color: var(--primary-color); color: white; }
-        .input { width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; box-sizing: border-box; }
+        .input { width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; box-sizing: border-box; font-size: 1rem; }
         .card { background-color: var(--surface-color); border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); padding: 1.5rem; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 2rem auto; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        /* Layout for the main chat interface */
         .chat-layout { display: grid; grid-template-columns: 300px 1fr; height: 100%; width: 100%; }
-        .sidebar { background-color: var(--surface-color); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
+        .sidebar { background-color: var(--surface-color); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; overflow-y: auto; }
         .chat-view { display: flex; flex-direction: column; height: 100%; }
-        .message-list { flex-grow: 1; overflow-y: auto; padding: 1rem; }
-        .message-input-area { padding: 1rem; border-top: 1px solid var(--border-color); }
-        .message-bubble { max-width: 70%; padding: 0.75rem 1rem; border-radius: 1.25rem; margin-bottom: 0.5rem; }
+        .message-list { flex-grow: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; }
+        .message-input-area { padding: 1rem; border-top: 1px solid var(--border-color); background-color: var(--surface-color); }
+        .message-bubble { max-width: 70%; padding: 0.75rem 1rem; border-radius: 1.25rem; margin-bottom: 0.5rem; word-wrap: break-word; }
         .message-bubble.sent { background-color: var(--primary-color); color: white; margin-left: auto; border-bottom-right-radius: 0.25rem; }
         .message-bubble.received { background-color: var(--surface-color); border: 1px solid var(--border-color); border-bottom-left-radius: 0.25rem; }
     </style>
@@ -54,15 +36,13 @@
     </div>
 
     <!-- HTML <template> for different views/components -->
-    <template id="loading-template">
-        <div class="loader"></div>
-    </template>
+    <template id="loading-template"><div class="loader"></div></template>
 
     <template id="login-template">
         <div class="container">
             <div class="card">
                 <h2>Welcome to AddaGhor</h2>
-                <p>Sign in or create an account to start chatting.</p>
+                <p>Sign in or create an account with a magic link.</p>
                 <form id="login-form">
                     <input type="email" class="input" placeholder="you@example.com" required>
                     <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Send Magic Link</button>
@@ -75,13 +55,13 @@
          <div class="container">
             <div class="card">
                 <h2>Create Your Profile</h2>
-                <p>Just a few more steps to get started.</p>
+                <p>Choose a unique username to get started.</p>
                 <form id="profile-wizard-form">
                     <label for="username">Username</label>
-                    <input type="text" id="username" class="input" required minlength="3" pattern="[a-zA-Z0-9_]+">
+                    <input type="text" id="username" class="input" required minlength="3" pattern="[a-zA-Z0-9_]+" autocomplete="off">
                     <label for="full_name" style="margin-top: 1rem; display: block;">Full Name</label>
                     <input type="text" id="full_name" class="input" required>
-                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Save and Continue</button>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Save and Enter</button>
                 </form>
             </div>
         </div>
@@ -95,13 +75,13 @@
     </template>
     
     <template id="chat-list-template">
-        <h3>Chats</h3>
+        <div style="padding: 1rem; border-bottom: 1px solid var(--border-color);"><h3>Chats</h3></div>
         <div id="user-list"></div>
     </template>
 
     <template id="chat-window-template">
         <div class="message-list" id="message-list"></div>
-        <div id="typing-indicator" style="padding: 0 1rem; height: 20px; color: var(--secondary-color);"></div>
+        <div id="typing-indicator" style="padding: 0 1rem; height: 20px; color: var(--secondary-color); font-style: italic;"></div>
         <div class="message-input-area">
             <form id="message-form">
                 <input type="text" class="input" id="message-input" placeholder="Type a message..." autocomplete="off">
@@ -109,10 +89,9 @@
         </div>
     </template>
 
-
     <script>
         // =============================================================================
-        // === AddaGhor: Single-File Application Logic
+        // === AddaGhor: Single-File Application Logic (v1.1 - Corrected)
         // === Architect: Principal Software Architect
         // =============================================================================
 
@@ -123,19 +102,27 @@
             state: {},
             root: document.getElementById('app'),
             subscriptions: {},
+            typingTimeout: null,
 
             // --- INITIALIZATION ---
             init() {
-                console.log("Architecting AddaGhor...");
                 this.initSupabase();
+                if (!this.supabase) return; // Stop if Supabase fails to init
                 this.initStateProxy();
                 this.initRouter();
+                this.attachEventListeners(); // Attach delegated listeners ONCE
                 this.handleAuth();
             },
 
             initSupabase() {
-                const SUPABASE_URL = 'https://ilnjnoxoyphhuxkeycli.supabase.co'; // <-- IMPORTANT: Replace
-                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlsbmpub3hveXBoaHV4a2V5Y2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NTM2ODcsImV4cCI6MjA3MTMyOTY4N30.0Qv9j8pX5Pw0wDBpIG_H0YbzTF-MKE3PgbQxWtfzuMg'; // <-- IMPORTANT: Replace
+                // ‼️ IMPORTANT ‼️ Replace with your actual Supabase credentials.
+                const SUPABASE_URL = 'https://ilnjnoxoyphhuxkeycli.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlsbmpub3hveXBoaHV4a2V5Y2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NTM2ODcsImV4cCI6MjA3MTMyOTY4N30.0Qv9j8pX5Pw0wDBpIG_H0YbzTF-MKE3PgbQxWtfzuMg';
+                
+                if (SUPABASE_URL === 'YOUR_SUPABASE_URL' || SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
+                    this.root.innerHTML = `<div class="container card" style="color: var(--error-color);"><h1>Configuration Error</h1><p>Supabase credentials are not set in <code>index.html</code>. The application cannot start.</p></div>`;
+                    return;
+                }
                 this.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             },
 
@@ -144,20 +131,19 @@
                 const self = this;
                 this._state = {
                     loading: true,
-                    currentUser: null, // { id, username, full_name, ... }
-                    currentProfile: null, // Profile being viewed
-                    currentChat: null, // { id, recipient: { id, username, ... } }
+                    currentUser: null,
+                    currentChat: null,
                     chatList: [],
                     messages: [],
                     onlineUsers: new Set(),
-                    view: 'loading', // 'loading', 'login', 'wizard', 'chat'
+                    view: 'loading',
                 };
 
                 this.state = new Proxy(this._state, {
                     set(target, property, value) {
                         target[property] = value;
                         console.log(`State change: ${property} =`, value);
-                        self.render(); // The magic happens here!
+                        self.render();
                         return true;
                     }
                 });
@@ -165,112 +151,112 @@
 
             // --- UI RENDERING ---
             render() {
-                const view = this.state.view;
-                let newHtml = '';
+                const currentView = this.root.dataset.view;
+                const newView = this.state.view;
 
-                // Render based on the current view state
-                switch(view) {
-                    case 'loading':
-                        newHtml = document.getElementById('loading-template').innerHTML;
-                        break;
-                    case 'login':
-                        newHtml = document.getElementById('login-template').innerHTML;
-                        break;
-                    case 'wizard':
-                        newHtml = document.getElementById('profile-wizard-template').innerHTML;
-                        break;
-                    case 'chat':
-                        newHtml = document.getElementById('chat-layout-template').innerHTML;
-                        break;
-                    default:
-                        newHtml = `<h2>Error: Unknown view '${view}'</h2>`;
-                }
-                
-                // Only re-render the entire view if the layout changes
-                if (this.root.dataset.view !== view) {
-                    this.root.innerHTML = newHtml;
-                    this.root.dataset.view = view;
+                // 1. Only re-render the main template if the view has changed
+                if (currentView !== newView) {
+                    let templateId = `${newView}-template`;
+                    const template = document.getElementById(templateId);
+                    if (template) {
+                        this.root.innerHTML = template.innerHTML;
+                        this.root.dataset.view = newView;
+                    } else {
+                        console.error(`Template not found for view: ${newView}`);
+                        return;
+                    }
                 }
 
-                // Call sub-renderers for dynamic content within a view
-                if (view === 'chat') {
+                // 2. Call sub-renderers to update dynamic content within the current view
+                if (newView === 'chat') {
                     this.ui.renderChatList();
                     this.ui.renderChatWindow();
                 }
-
-                // Always attach fresh event listeners after a render
-                this.attachEventListeners();
             },
 
-            // --- EVENT HANDLING ---
+            // --- EVENT HANDLING (DELEGATED) ---
             attachEventListeners() {
-                const view = this.state.view;
-                if (view === 'login') {
-                    document.getElementById('login-form')?.addEventListener('submit', this.handlers.onLoginSubmit);
-                }
-                if (view === 'wizard') {
-                    document.getElementById('profile-wizard-form')?.addEventListener('submit', this.handlers.onWizardSubmit);
-                }
-                if (view === 'chat') {
-                    document.getElementById('message-form')?.addEventListener('submit', this.handlers.onMessageSubmit);
-                    document.getElementById('message-input')?.addEventListener('input', this.handlers.onTyping);
-                    document.getElementById('user-list')?.addEventListener('click', this.handlers.onUserClick);
-                    document.getElementById('message-list')?.addEventListener('scroll', this.handlers.onMessageScroll);
-                }
+                // Listen for clicks on the entire app container
+                this.root.addEventListener('click', (e) => {
+                    const userCard = e.target.closest('.user-card');
+                    if (userCard) {
+                        this.handlers.onUserClick(userCard.dataset.username);
+                    }
+                });
+
+                // Listen for form submissions
+                this.root.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    if (e.target.id === 'login-form') this.handlers.onLoginSubmit(e.target);
+                    if (e.target.id === 'profile-wizard-form') this.handlers.onWizardSubmit(e.target);
+                    if (e.target.id === 'message-form') this.handlers.onMessageSubmit(e.target);
+                });
+                
+                // Listen for input events
+                this.root.addEventListener('input', (e) => {
+                    if (e.target.id === 'message-input') this.handlers.onTyping();
+                });
+                
+                // Listen for scrolling (for lazy loading)
+                this.root.addEventListener('scroll', (e) => {
+                    if (e.target.id === 'message-list') this.handlers.onMessageScroll(e.target);
+                }, true); // Use capture phase to ensure it works
             },
 
-            // --- AUTHENTICATION ---
-            async handleAuth() {
+            // --- AUTHENTICATION (RE-ARCHITECTED) ---
+            handleAuth() {
                 this.supabase.auth.onAuthStateChange(async (event, session) => {
-                    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-                        if (session) {
-                            const { data: profile, error } = await this.supabase
-                                .from('profiles')
-                                .select('*')
-                                .eq('id', session.user.id)
-                                .single();
-
-                            if (error && error.code === 'PGRST116') { // No rows found
-                                this.state.view = 'wizard';
-                            } else if (profile) {
-                                this.state.currentUser = profile;
-                                this.state.loading = false;
-                                this.router.route(window.location.hash); // Route after login
-                                this.realtime.initPresence();
-                                this.api.fetchChatList();
-                            }
-                        } else {
-                            this.state.view = 'login';
-                        }
-                    } else if (event === 'SIGNED_OUT') {
+                    if (event === 'SIGNED_OUT' || !session) {
+                        this.realtime.disconnectAll();
                         this.state.currentUser = null;
                         this.state.view = 'login';
-                        this.realtime.disconnectAll();
+                        return;
+                    }
+
+                    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+                        // First, get the profile
+                        const { data: profile, error } = await this.supabase
+                            .from('profiles')
+                            .select('*')
+                            .eq('id', session.user.id)
+                            .single();
+                        
+                        if (error && error.code !== 'PGRST116') {
+                            console.error("Error fetching profile:", error);
+                            this.state.view = 'login'; // Fallback to login on error
+                            return;
+                        }
+
+                        // Check if profile is complete (username is the key indicator)
+                        if (profile && profile.username) {
+                            this.state.currentUser = profile;
+                            this.state.view = 'chat';
+                            this.router.route(window.location.hash); // Now route to sub-view
+                            this.realtime.initPresence();
+                            this.api.fetchChatList();
+                        } else {
+                            // New user or incomplete profile -> force wizard
+                            this.state.currentUser = { id: session.user.id }; // Store ID at least
+                            this.state.view = 'wizard';
+                        }
                     }
                 });
             },
 
             // --- ROUTING ---
             router: {
-                parent: this,
+                parent: App,
                 route(hash) {
+                    if (this.parent.state.view !== 'chat') return; // Router only acts within chat view
+                    
                     hash = hash || '#/';
                     console.log(`Routing to: ${hash}`);
-                    
-                    if (!this.parent.state.currentUser) {
-                        this.parent.state.view = 'login';
-                        return;
-                    }
-                    
-                    this.parent.state.view = 'chat'; // Default to chat view
 
                     if (hash.startsWith('#/dm/')) {
                         const username = hash.split('/')[2];
                         this.parent.api.startDM(username);
                     } else {
-                         // Default home view
-                        this.parent.state.currentChat = null;
-                        this.parent.state.messages = [];
+                        this.parent.state.currentChat = null; // Clear chat window for home view
                     }
                 },
                 init() {
@@ -278,82 +264,44 @@
                 }
             },
 
-            // --- API LAYER (Data Fetching/Mutation) ---
+            // --- API LAYER ---
             api: {
                 parent: App,
                 async fetchChatList() {
-                    // This is a simplified fetch, a real app would join on last message
                     const { data, error } = await this.parent.supabase.from('profiles').select('*').neq('id', this.parent.state.currentUser.id);
                     if (!error) this.parent.state.chatList = data;
                 },
                 async startDM(username) {
-                    // 1. Get user profile
                     const { data: userProfile } = await this.parent.supabase.from('profiles').select('*').eq('username', username).single();
-                    if (!userProfile) return; // Handle user not found
-
-                    // 2. Get or create chat
-                    const { data: chatId } = await this.parent.supabase.rpc('get_chat_id_for_users', {
-                        user1_id: this.parent.state.currentUser.id,
-                        user2_id: userProfile.id
-                    });
+                    if (!userProfile) return console.error("User not found:", username);
+                    
+                    const { data: chatId } = await this.parent.supabase.rpc('get_chat_id_for_users', { user1_id: this.parent.state.currentUser.id, user2_id: userProfile.id });
 
                     this.parent.state.currentChat = { id: chatId, recipient: userProfile };
                     this.parent.api.fetchMessages(chatId);
                     this.parent.realtime.subscribeToChat(chatId);
                 },
                 async fetchMessages(chatId, page = 0, limit = 50) {
-                     const { data, error } = await this.parent.supabase
-                        .from('messages')
-                        .select('*, sender:sender_id(*)')
-                        .eq('chat_id', chatId)
-                        .order('created_at', { ascending: false })
-                        .range(page * limit, (page + 1) * limit - 1);
-                    
+                     const { data, error } = await this.parent.supabase.from('messages').select('*, sender:sender_id(*)')
+                        .eq('chat_id', chatId).order('created_at', { ascending: false }).range(page * limit, (page + 1) * limit - 1);
                     if (!error) {
                          const reversedData = data.reverse();
-                         if(page === 0) this.parent.state.messages = reversedData;
-                         else this.parent.state.messages = [...reversedData, ...this.parent.state.messages];
+                         this.parent.state.messages = page === 0 ? reversedData : [...reversedData, ...this.parent.state.messages];
                     }
                 },
                 async sendMessage(content, chatId) {
                     const tempId = `temp_${Date.now()}`;
-                    const optimisticMessage = {
-                        id: tempId,
-                        content: content,
-                        created_at: new Date().toISOString(),
-                        sender_id: this.parent.state.currentUser.id,
-                        sender: this.parent.state.currentUser,
-                        chat_id: chatId,
-                        status: 'sending'
-                    };
-                    
-                    // Optimistic UI Update
+                    const optimisticMessage = { id: tempId, content, created_at: new Date().toISOString(), sender_id: this.parent.state.currentUser.id, sender: this.parent.state.currentUser, chat_id: chatId, status: 'sending' };
                     this.parent.state.messages = [...this.parent.state.messages, optimisticMessage];
 
-                    const { data, error } = await this.parent.supabase
-                        .from('messages')
-                        .insert({
-                            content: content,
-                            chat_id: chatId,
-                            sender_id: this.parent.state.currentUser.id
-                        })
-                        .select()
-                        .single();
-
-                    // Finalize UI update
-                    const finalMessages = this.parent.state.messages.map(m => {
-                        if (m.id === tempId) return { ...m, ...data, status: 'sent' };
-                        return m;
-                    });
-                    this.parent.state.messages = finalMessages;
-
-                    if(error) { // Handle rollback
-                         const errorMessages = this.parent.state.messages.map(m => {
-                            if (m.id === tempId) return { ...m, status: 'failed' };
-                            return m;
-                        });
-                        this.parent.state.messages = errorMessages;
+                    const { data, error } = await this.parent.supabase.from('messages').insert({ content, chat_id: chatId, sender_id: this.parent.state.currentUser.id }).select().single();
+                    
+                    const finalMessages = this.parent.state.messages.map(m => m.id === tempId ? { ...m, ...data, status: 'sent' } : m);
+                    if(error) {
                         console.error("Message send failed:", error);
+                        this.parent.state.messages = this.parent.state.messages.map(m => m.id === tempId ? { ...m, status: 'failed' } : m);
+                    } else {
+                        this.parent.state.messages = finalMessages;
                     }
                 }
             },
@@ -361,40 +309,34 @@
             // --- REALTIME LAYER ---
             realtime: {
                 parent: App,
-                presenceChannel: null,
                 initPresence() {
-                    this.presenceChannel = this.parent.supabase.channel('online-users');
-                    this.presenceChannel
-                        .on('presence', { event: 'sync' }, () => {
-                            const presences = this.presenceChannel.presenceState();
-                            const onlineIds = Object.keys(presences).map(id => presences[id][0].user_id);
-                            this.parent.state.onlineUsers = new Set(onlineIds);
-                        })
-                        .subscribe(async (status) => {
-                            if (status === 'SUBSCRIBED') {
-                                await this.presenceChannel.track({ user_id: this.parent.state.currentUser.id });
-                            }
-                        });
+                    if (this.parent.subscriptions['presence']) return;
+                    const channel = this.parent.supabase.channel('online-users');
+                    this.parent.subscriptions['presence'] = channel;
+                    channel.on('presence', { event: 'sync' }, () => {
+                        const presences = channel.presenceState();
+                        const onlineIds = Object.keys(presences).map(id => presences[id][0].user_id);
+                        this.parent.state.onlineUsers = new Set(onlineIds);
+                    }).subscribe(async (status) => {
+                        if (status === 'SUBSCRIBED') await channel.track({ user_id: this.parent.state.currentUser.id });
+                    });
                 },
                 subscribeToChat(chatId) {
                     const channelId = `chat:${chatId}`;
                     if (this.parent.subscriptions[channelId]) return;
 
-                    const chatChannel = this.parent.supabase
-                        .channel(channelId)
+                    const chatChannel = this.parent.supabase.channel(channelId)
                         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` }, 
                             async (payload) => {
-                                const { data: message } = await this.parent.supabase.from('profiles').select('*').eq('id', payload.new.sender_id).single();
-                                payload.new.sender = message;
+                                if (payload.new.sender_id === this.parent.state.currentUser.id) return; // Ignore our own messages
+                                const { data: profile } = await this.parent.supabase.from('profiles').select('*').eq('id', payload.new.sender_id).single();
+                                payload.new.sender = profile;
                                 this.parent.state.messages = [...this.parent.state.messages, payload.new];
                         })
                         .on('broadcast', { event: 'typing' }, ({ payload }) => {
-                            if (payload.user_id !== this.parent.state.currentUser.id) {
-                                this.parent.ui.showTypingIndicator(payload.username);
-                            }
+                            if (payload.user_id !== this.parent.state.currentUser.id) this.parent.ui.showTypingIndicator(payload.username);
                         })
                         .subscribe();
-                    
                     this.parent.subscriptions[channelId] = chatChannel;
                 },
                 disconnectAll() {
@@ -402,13 +344,8 @@
                     this.parent.subscriptions = {};
                 },
                 broadcastTyping(chatId) {
-                    const channelId = `chat:${chatId}`;
-                    const channel = this.parent.supabase.channel(channelId);
-                    channel.send({
-                        type: 'broadcast',
-                        event: 'typing',
-                        payload: { user_id: this.parent.state.currentUser.id, username: this.parent.state.currentUser.username }
-                    });
+                    const channel = this.parent.supabase.channel(`chat:${chatId}`);
+                    channel.send({ type: 'broadcast', event: 'typing', payload: { user_id: this.parent.state.currentUser.id, username: this.parent.state.currentUser.username }});
                 }
             },
 
@@ -418,119 +355,86 @@
                 renderChatList() {
                     const container = document.getElementById('sidebar-content');
                     if (!container) return;
-                    
                     const listHtml = this.parent.state.chatList.map(user => `
-                        <div class="user-card" data-username="${user.username}" style="padding: 1rem; cursor: pointer; border-bottom: 1px solid var(--border-color);">
-                           ${this.parent.state.onlineUsers.has(user.id) ? '🟢' : '⚪'} ${user.full_name || user.username}
+                        <div class="user-card" data-username="${user.username}" style="padding: 1rem; cursor: pointer; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px;">
+                           <span style="color: ${this.parent.state.onlineUsers.has(user.id) ? 'var(--success-color)' : 'var(--secondary-color)'};">●</span>
+                           ${user.full_name || user.username}
                         </div>
                     `).join('');
-                    
-                    container.innerHTML = document.getElementById('chat-list-template').innerHTML + listHtml;
+                    container.innerHTML = document.getElementById('chat-list-template').innerHTML + `<div id="user-list">${listHtml}</div>`;
                 },
                 renderChatWindow() {
                     const container = document.getElementById('main-content');
                     if (!container) return;
-                    
                     if (this.parent.state.currentChat) {
                         container.innerHTML = document.getElementById('chat-window-template').innerHTML;
                         this.renderMessages();
                     } else {
-                        container.innerHTML = `<div style="text-align: center; padding-top: 5rem;">Select a chat to start messaging</div>`;
+                        container.innerHTML = `<div style="text-align: center; padding-top: 5rem; color: var(--secondary-color);">Select a chat to start messaging</div>`;
                     }
                 },
                 renderMessages() {
                     const container = document.getElementById('message-list');
                     if (!container) return;
-
-                    container.innerHTML = this.parent.state.messages.map(msg => this.renderMessageBubble(msg)).join('');
-                    container.scrollTop = container.scrollHeight; // Auto-scroll to bottom
+                    container.innerHTML = this.parent.state.messages.map(this.renderMessageBubble.bind(this)).join('');
+                    container.scrollTop = container.scrollHeight;
                 },
                 renderMessageBubble(msg) {
                     const isSent = msg.sender_id === this.parent.state.currentUser.id;
                     const statusIndicator = msg.status === 'sending' ? '🕒' : msg.status === 'failed' ? '❗️' : '';
-                    return `
-                        <div class="message-bubble ${isSent ? 'sent' : 'received'}">
-                            ${!isSent ? `<strong>${msg.sender.username}</strong><br>` : ''}
-                            ${msg.content} ${statusIndicator}
-                        </div>
-                    `;
+                    return `<div class="message-bubble ${isSent ? 'sent' : 'received'}">${msg.content} ${statusIndicator}</div>`;
                 },
-                typingTimeout: null,
                 showTypingIndicator(username) {
                     const indicator = document.getElementById('typing-indicator');
                     if (!indicator) return;
                     indicator.textContent = `${username} is typing...`;
-                    
-                    clearTimeout(this.typingTimeout);
-                    this.typingTimeout = setTimeout(() => {
-                        indicator.textContent = '';
-                    }, 2000);
+                    clearTimeout(this.parent.typingTimeout);
+                    this.parent.typingTimeout = setTimeout(() => { indicator.textContent = ''; }, 2000);
                 }
             },
             
             // --- EVENT HANDLERS ---
             handlers: {
                 parent: App,
-                onLoginSubmit: async (e) => {
-                    e.preventDefault();
-                    const email = e.target.querySelector('input[type="email"]').value;
-                    const { error } = await this.parent.supabase.auth.signInWithOtp({
-                        email,
-                        options: {
-                            // This is the CRUCIAL part for GitHub Pages deployment
-                            emailRedirectTo: 'https://sohom9143.github.io/Chat-App/'
-                        }
-                    });
+                async onLoginSubmit(form) {
+                    const email = form.querySelector('input[type="email"]').value;
+                    const { error } = await this.parent.supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin }});
                     if (error) alert(error.message);
                     else alert('Check your email for the magic link!');
                 },
-                onWizardSubmit: async (e) => {
-                    e.preventDefault();
-                    const username = document.getElementById('username').value;
-                    const fullName = document.getElementById('full_name').value;
+                async onWizardSubmit(form) {
+                    const username = form.querySelector('#username').value;
+                    const fullName = form.querySelector('#full_name').value;
                     const { data, error } = await this.parent.supabase
-                        .from('profiles')
-                        .update({ username, full_name: fullName })
-                        .eq('id', this.parent.state.currentUser.id)
-                        .select()
-                        .single();
-
+                        .from('profiles').update({ username, full_name: fullName })
+                        .eq('id', this.parent.state.currentUser.id).select().single();
                     if (error) {
                         alert(`Error: ${error.message}`);
                     } else {
                         this.parent.state.currentUser = data; // Update state with completed profile
-                        this.parent.router.route('#/');
+                        this.parent.state.view = 'chat'; // <<-- CORRECT way to transition
                     }
                 },
-                onMessageSubmit: (e) => {
-                    e.preventDefault();
-                    const input = document.getElementById('message-input');
+                onMessageSubmit(form) {
+                    const input = form.querySelector('#message-input');
                     const content = input.value.trim();
                     if (content && this.parent.state.currentChat) {
                         this.parent.api.sendMessage(content, this.parent.state.currentChat.id);
                         input.value = '';
                     }
                 },
-                onUserClick: (e) => {
-                    const card = e.target.closest('.user-card');
-                    if(card) {
-                        const username = card.dataset.username;
-                        window.location.hash = `#/dm/${username}`;
-                    }
+                onUserClick(username) {
+                    window.location.hash = `#/dm/${username}`;
                 },
-                // Throttled typing event
-                _typingTimeout: null,
-                onTyping: () => {
+                onTyping() {
                     if (!this.parent.state.currentChat) return;
-                    clearTimeout(this._typingTimeout);
-                    this._typingTimeout = setTimeout(() => {
+                    clearTimeout(this.parent.typingTimeout);
+                    this.parent.typingTimeout = setTimeout(() => {
                        this.parent.realtime.broadcastTyping(this.parent.state.currentChat.id);
-                    }, 500); // Debounce/throttle typing event
+                    }, 500);
                 },
-                 // Lazy loading messages
-                onMessageScroll: (e) => {
-                   if (e.target.scrollTop === 0 && this.parent.state.messages.length >= 50) {
-                        console.log("Loading more messages...");
+                onMessageScroll(element) {
+                   if (element.scrollTop === 0 && this.parent.state.messages.length >= 50) {
                         const currentPage = Math.floor(this.parent.state.messages.length / 50);
                         this.parent.api.fetchMessages(this.parent.state.currentChat.id, currentPage);
                    }
@@ -540,7 +444,6 @@
 
         // --- APPLICATION ENTRY POINT ---
         document.addEventListener('DOMContentLoaded', () => App.init());
-
     </script>
 </body>
 </html>
