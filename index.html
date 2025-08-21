@@ -91,8 +91,7 @@
 
     <script>
         // =============================================================================
-        // === AddaGhor: Single-File Application Logic (v1.1 - Corrected)
-        // === Architect: Principal Software Architect
+        // === AddaGhor: Single-File Application Logic (v1.2 - GitHub Pages Fix)
         // =============================================================================
 
         const App = {
@@ -115,9 +114,8 @@
             },
 
             initSupabase() {
-                // ‼️ IMPORTANT ‼️ Replace with your actual Supabase credentials.
-                const SUPABASE_URL = 'https://ilnjnoxoyphhuxkeycli.supabase.co';
-                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlsbmpub3hveXBoaHV4a2V5Y2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NTM2ODcsImV4cCI6MjA3MTMyOTY4N30.0Qv9j8pX5Pw0wDBpIG_H0YbzTF-MKE3PgbQxWtfzuMg';
+                const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+                const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
                 
                 if (SUPABASE_URL === 'YOUR_SUPABASE_URL' || SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
                     this.root.innerHTML = `<div class="container card" style="color: var(--error-color);"><h1>Configuration Error</h1><p>Supabase credentials are not set in <code>index.html</code>. The application cannot start.</p></div>`;
@@ -154,7 +152,6 @@
                 const currentView = this.root.dataset.view;
                 const newView = this.state.view;
 
-                // 1. Only re-render the main template if the view has changed
                 if (currentView !== newView) {
                     let templateId = `${newView}-template`;
                     const template = document.getElementById(templateId);
@@ -167,7 +164,6 @@
                     }
                 }
 
-                // 2. Call sub-renderers to update dynamic content within the current view
                 if (newView === 'chat') {
                     this.ui.renderChatList();
                     this.ui.renderChatWindow();
@@ -176,7 +172,6 @@
 
             // --- EVENT HANDLING (DELEGATED) ---
             attachEventListeners() {
-                // Listen for clicks on the entire app container
                 this.root.addEventListener('click', (e) => {
                     const userCard = e.target.closest('.user-card');
                     if (userCard) {
@@ -184,7 +179,6 @@
                     }
                 });
 
-                // Listen for form submissions
                 this.root.addEventListener('submit', (e) => {
                     e.preventDefault();
                     if (e.target.id === 'login-form') this.handlers.onLoginSubmit(e.target);
@@ -192,18 +186,16 @@
                     if (e.target.id === 'message-form') this.handlers.onMessageSubmit(e.target);
                 });
                 
-                // Listen for input events
                 this.root.addEventListener('input', (e) => {
                     if (e.target.id === 'message-input') this.handlers.onTyping();
                 });
                 
-                // Listen for scrolling (for lazy loading)
                 this.root.addEventListener('scroll', (e) => {
                     if (e.target.id === 'message-list') this.handlers.onMessageScroll(e.target);
-                }, true); // Use capture phase to ensure it works
+                }, true);
             },
 
-            // --- AUTHENTICATION (RE-ARCHITECTED) ---
+            // --- AUTHENTICATION ---
             handleAuth() {
                 this.supabase.auth.onAuthStateChange(async (event, session) => {
                     if (event === 'SIGNED_OUT' || !session) {
@@ -214,7 +206,6 @@
                     }
 
                     if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-                        // First, get the profile
                         const { data: profile, error } = await this.supabase
                             .from('profiles')
                             .select('*')
@@ -223,20 +214,18 @@
                         
                         if (error && error.code !== 'PGRST116') {
                             console.error("Error fetching profile:", error);
-                            this.state.view = 'login'; // Fallback to login on error
+                            this.state.view = 'login';
                             return;
                         }
 
-                        // Check if profile is complete (username is the key indicator)
                         if (profile && profile.username) {
                             this.state.currentUser = profile;
                             this.state.view = 'chat';
-                            this.router.route(window.location.hash); // Now route to sub-view
+                            this.router.route(window.location.hash);
                             this.realtime.initPresence();
                             this.api.fetchChatList();
                         } else {
-                            // New user or incomplete profile -> force wizard
-                            this.state.currentUser = { id: session.user.id }; // Store ID at least
+                            this.state.currentUser = { id: session.user.id };
                             this.state.view = 'wizard';
                         }
                     }
@@ -247,16 +236,14 @@
             router: {
                 parent: App,
                 route(hash) {
-                    if (this.parent.state.view !== 'chat') return; // Router only acts within chat view
-                    
+                    if (this.parent.state.view !== 'chat') return;
                     hash = hash || '#/';
                     console.log(`Routing to: ${hash}`);
-
                     if (hash.startsWith('#/dm/')) {
                         const username = hash.split('/')[2];
                         this.parent.api.startDM(username);
                     } else {
-                        this.parent.state.currentChat = null; // Clear chat window for home view
+                        this.parent.state.currentChat = null;
                     }
                 },
                 init() {
@@ -274,9 +261,7 @@
                 async startDM(username) {
                     const { data: userProfile } = await this.parent.supabase.from('profiles').select('*').eq('username', username).single();
                     if (!userProfile) return console.error("User not found:", username);
-                    
                     const { data: chatId } = await this.parent.supabase.rpc('get_chat_id_for_users', { user1_id: this.parent.state.currentUser.id, user2_id: userProfile.id });
-
                     this.parent.state.currentChat = { id: chatId, recipient: userProfile };
                     this.parent.api.fetchMessages(chatId);
                     this.parent.realtime.subscribeToChat(chatId);
@@ -293,9 +278,7 @@
                     const tempId = `temp_${Date.now()}`;
                     const optimisticMessage = { id: tempId, content, created_at: new Date().toISOString(), sender_id: this.parent.state.currentUser.id, sender: this.parent.state.currentUser, chat_id: chatId, status: 'sending' };
                     this.parent.state.messages = [...this.parent.state.messages, optimisticMessage];
-
                     const { data, error } = await this.parent.supabase.from('messages').insert({ content, chat_id: chatId, sender_id: this.parent.state.currentUser.id }).select().single();
-                    
                     const finalMessages = this.parent.state.messages.map(m => m.id === tempId ? { ...m, ...data, status: 'sent' } : m);
                     if(error) {
                         console.error("Message send failed:", error);
@@ -324,11 +307,10 @@
                 subscribeToChat(chatId) {
                     const channelId = `chat:${chatId}`;
                     if (this.parent.subscriptions[channelId]) return;
-
                     const chatChannel = this.parent.supabase.channel(channelId)
                         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` }, 
                             async (payload) => {
-                                if (payload.new.sender_id === this.parent.state.currentUser.id) return; // Ignore our own messages
+                                if (payload.new.sender_id === this.parent.state.currentUser.id) return;
                                 const { data: profile } = await this.parent.supabase.from('profiles').select('*').eq('id', payload.new.sender_id).single();
                                 payload.new.sender = profile;
                                 this.parent.state.messages = [...this.parent.state.messages, payload.new];
@@ -398,7 +380,10 @@
                 parent: App,
                 async onLoginSubmit(form) {
                     const email = form.querySelector('input[type="email"]').value;
-                    const { error } = await this.parent.supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin }});
+                    // ‼️ CRITICAL FIX FOR GITHUB PAGES ‼️
+                    // This creates the full, correct URL like https://user.github.io/repo/
+                    const redirectUrl = window.location.origin + window.location.pathname;
+                    const { error } = await this.parent.supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectUrl }});
                     if (error) alert(error.message);
                     else alert('Check your email for the magic link!');
                 },
@@ -411,8 +396,8 @@
                     if (error) {
                         alert(`Error: ${error.message}`);
                     } else {
-                        this.parent.state.currentUser = data; // Update state with completed profile
-                        this.parent.state.view = 'chat'; // <<-- CORRECT way to transition
+                        this.parent.state.currentUser = data;
+                        this.parent.state.view = 'chat';
                     }
                 },
                 onMessageSubmit(form) {
